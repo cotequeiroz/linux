@@ -53,14 +53,14 @@ zconf.tab.o: zconf.lex.c confdata.c
 
 kconfig_load.o: lkc_defs.h
 
-zconf.tab.c: zconf.y $(wildcard zconf.tab.c_shipped)
-zconf.lex.c: zconf.l $(wildcard zconf.lex.c_shipped)
+zconf.tab.c: zconf.y
+zconf.lex.c: zconf.l
 
 %.tab.c: %.y
-	cp $@_shipped $@ || bison -l -b $* -p $(notdir $*) $<
+	bison -l -b $* -p $(notdir $*) $<
 
 %.lex.c: %.l
-	cp $@_shipped $@ || flex -L -P$(notdir $*) -o$@ $<
+	flex -L -P$(notdir $*) -o$@ $<
 
 ifeq ($(MAKECMDGOALS),qconf)
 qconf.o: .tmp_qtcheck
