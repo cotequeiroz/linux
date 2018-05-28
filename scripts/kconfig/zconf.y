@@ -544,7 +544,6 @@ void conf_parse(const char *name)
 
 	zconf_initscan(name);
 
-	sym_init();
 	_menu_init();
 
 #if YYDEBUG
@@ -792,3 +791,4 @@ void zconfdump(FILE *out)
 #include "expr.c"
 #include "symbol.c"
 #include "menu.c"
+#include "preprocess.c"
