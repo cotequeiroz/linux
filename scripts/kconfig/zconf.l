@@ -162,7 +162,7 @@ n	[A-Za-z0-9_-]
 		BEGIN(STRING);
 	}
 	\n	BEGIN(INITIAL); return T_EOL;
-	({n}|[/.])+	{
+	{n}+	{
 		const struct kconf_id *id = kconf_id_lookup(yytext, yyleng);
 		if (id && id->flags & TF_PARAM) {
 			yylval.id = id;
@@ -172,7 +172,7 @@ n	[A-Za-z0-9_-]
 		yylval.string = text;
 		return T_WORD;
 	}
-	({n}|[/.$])+	{
+	({n}|$)+	{
 		/* this token includes at least one '$' */
 		yylval.string = expand_token(yytext, yyleng);
 		if (strlen(yylval.string))
