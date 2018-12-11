@@ -30,9 +30,6 @@ static struct kconf_id kconf_id_array[] = {
 	{ "visible",		T_VISIBLE,		TF_COMMAND },
 	{ "option",		T_OPTION,		TF_COMMAND },
 	{ "on",			T_ON,			TF_PARAM },
-	{ "modules",		T_OPT_MODULES,		TF_OPTION },
-	{ "defconfig_list",	T_OPT_DEFCONFIG_LIST,	TF_OPTION },
-	{ "allnoconfig_y",	T_OPT_ALLNOCONFIG_Y,	TF_OPTION },
 	{ "reset",		T_RESET,		TF_COMMAND },
 };
 
