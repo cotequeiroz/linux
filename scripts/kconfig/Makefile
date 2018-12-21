@@ -20,7 +20,7 @@ export CXXFLAGS += -DKBUILD_NO_NLS
 conf-objs	:= conf.o $(common-objs)
 mconf-objs	:= mconf.o $(common-objs)
 qconf-cxxobjs	:= qconf.o
-qconf-objs	:= zconf.tab.o
+qconf-objs	:= images.o $(common-objs)
 
 lxdialog-objs := \
 	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
