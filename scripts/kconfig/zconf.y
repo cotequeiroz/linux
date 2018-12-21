@@ -20,7 +20,6 @@
 
 int cdebug = PRINTD;
 
-int yylex(void);
 static void yyerror(const char *err);
 static void zconfprint(const char *err, ...);
 static void zconf_error(const char *err, ...);
@@ -741,6 +740,5 @@ void zconfdump(FILE *out)
 	}
 }
 
-#include "zconf.lex.c"
 #include "util.c"
 #include "menu.c"

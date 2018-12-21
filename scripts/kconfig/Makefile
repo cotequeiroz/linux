@@ -5,7 +5,9 @@
 # ===========================================================================
 # object files used by all kconfig flavours
 
-common-objs	:= confdata.o expr.o symbol.o preprocess.o zconf.tab.o
+common-objs	:= confdata.o expr.o symbol.o preprocess.o zconf.lex.o zconf.tab.o
+
+zconf.lex.o: zconf.tab.h
 
 # Platform specific fixes
 #
@@ -43,8 +45,6 @@ endif
 
 clean:
 	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
-
-zconf.tab.o: zconf.lex.c confdata.c
 
 kconfig_load.o: lkc_defs.h
 
