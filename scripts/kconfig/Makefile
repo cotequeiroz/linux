@@ -3,14 +3,9 @@
 # These targets are used from top-level makefile
 
 # ===========================================================================
-# Shared Makefile for the various kconfig executables:
-# conf:	  Used for defconfig, oldconfig and related targets
-# mconf:  Used for the mconfig target.
-#         Utilizes the lxdialog package
-# qconf:  Used for the xconfig target
-#         Based on Qt which needs to be installed to compile it
 # object files used by all kconfig flavours
 
+common-objs	:= confdata.o expr.o symbol.o preprocess.o zconf.tab.o
 
 # Platform specific fixes
 #
@@ -20,8 +15,8 @@ check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 export CXXFLAGS += -DKBUILD_NO_NLS
 
-conf-objs	:= conf.o zconf.tab.o
-mconf-objs	:= mconf.o zconf.tab.o
+conf-objs	:= conf.o $(common-objs)
+mconf-objs	:= mconf.o $(common-objs)
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 
