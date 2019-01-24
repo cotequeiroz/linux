@@ -4,10 +4,9 @@
 
 # ===========================================================================
 # object files used by all kconfig flavours
+common-objs	:= confdata.o expr.o lexer.lex.o preprocess.o symbol.o zconf.tab.o
 
-common-objs	:= confdata.o expr.o symbol.o preprocess.o zconf.lex.o zconf.tab.o
-
-zconf.lex.o: zconf.tab.h
+lexer.lex.o: zconf.tab.h
 
 # Platform specific fixes
 #
