@@ -1,16 +1,16 @@
 # ===========================================================================
 # OpenWrt configuration targets
 # These targets are used from top-level makefile
-
 # ===========================================================================
-# object files used by all kconfig flavours
-common-objs	:= confdata.o expr.o lexer.lex.o preprocess.o symbol.o zconf.tab.o
-
-lexer.lex.o: zconf.tab.h
-
 # Platform specific fixes
 #
 # FreeBSD
+
+# object files used by all kconfig flavours
+common-objs	:= confdata.o expr.o lexer.lex.o parser.tab.o preprocess.o \
+		   symbol.o
+
+lexer.lex.o: parser.tab.h
 
 check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
