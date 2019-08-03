@@ -850,6 +850,7 @@ int conf_write(const char *name)
 	const char *str;
 	char tmpname[PATH_MAX + 1], oldname[PATH_MAX + 1];
 	char *env;
+	int i;
 	bool need_newline = false;
 
 	if (!name)
@@ -931,6 +932,9 @@ next:
 		}
 	}
 	fclose(out);
+
+	for_all_symbols(i, sym)
+		sym->flags &= ~SYMBOL_WRITTEN;
 
 	if (*tmpname) {
 		if (is_same(name, tmpname)) {
