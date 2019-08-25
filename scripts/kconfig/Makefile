@@ -12,7 +12,7 @@ clean:
 # ===========================================================================
 # object files used by all kconfig flavours
 common-objs	:= confdata.o expr.o lexer.lex.o parser.tab.o preprocess.o \
-		   symbol.o
+		   symbol.o util.o
 clean-files	:= parser.tab.c parser.tab.h lexer.lex.c
 
 lexer.lex.o: parser.tab.h
