@@ -1,60 +1,63 @@
 # ===========================================================================
 # OpenWrt configuration targets
-# These targets are used from top-level makefile
 # ===========================================================================
 # Platform specific fixes
 #
 # FreeBSD
 
+all: conf mconf
+clean:
+	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
+
+# ===========================================================================
 # object files used by all kconfig flavours
 common-objs	:= confdata.o expr.o lexer.lex.o parser.tab.o preprocess.o \
 		   symbol.o
+clean-files	:= parser.tab.c parser.tab.h lexer.lex.c
 
 lexer.lex.o: parser.tab.h
-
-check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
-export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
+parser.tab.c: parser.y
+lexer.lex.c: lexer.l
+export CFLAGS += -DKBUILD_NO_NLS -I.
 export CXXFLAGS += -DKBUILD_NO_NLS
 
+%.tab.c %.tab.h: %.y
+	bison -d -l -b $* $<
+
+%.lex.c: %.l
+	flex -L -o$@ $<
+
+# conf: Used for defconfig, oldconfig and related targets
 conf-objs	:= conf.o $(common-objs)
-mconf-objs	:= mconf.o $(common-objs)
+conf: $(conf-objs)
+
+# mconf: Used for the menuconfig target based on lxdialog
+lxdialog	:= $(addprefix lxdialog/, \
+		     checklist.o inputbox.o menubox.o textbox.o util.o yesno.o)
+mconf-objs	:= mconf.o $(lxdialog) $(common-objs)
+
+check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
+export CFLAGS += $(call check_lxdialog,ccflags)
+
+mconf: $(mconf-objs)
+	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
+
+# qconf: Used for the xconfig target based on Qt
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= images.o $(common-objs)
 
-lxdialog-objs := \
-	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
-	lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
-
-clean-files	:= zconf.tab.c zconf.lex.c
+HOSTLDLIBS_qconf	= $(KC_QT_LIBS)
+HOSTCXXFLAGS_qconf.o	= $(KC_QT_CFLAGS)
 # Remove qconf junk files
 clean-files	+= $(qconf-cxxobjs) qconf.moc .tmp_qtcheck qconf
 
-all: conf mconf
-
-conf: $(conf-objs)
-mconf: $(mconf-objs) $(lxdialog-objs)
-	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
 qconf: $(qconf-cxxobjs) $(qconf-objs)
 ifneq ($(DISTRO-PKG-CONFIG),)
-	$(CXX) -o $@ $^ $(HOSTLOADLIBES_qconf)
+	$(CXX) -o $@ $^ $(HOSTLDLIBS_qconf)
 else
 	echo "You don't have 'pkg-config' installed. Cannot continue"
 	echo "For now, you may use 'make menuconfig' instead of 'make xconfig'"
 endif
-
-clean:
-	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
-
-kconfig_load.o: lkc_defs.h
-
-zconf.tab.c: zconf.y
-zconf.lex.c: zconf.l
-
-%.tab.c: %.y
-	bison -l -b $* -p $(notdir $*) $<
-
-%.lex.c: %.l
-	flex -L -P$(notdir $*) -o$@ $<
 
 ifeq ($(MAKECMDGOALS),qconf)
 qconf.o: .tmp_qtcheck
@@ -85,8 +88,6 @@ qconf.o: .tmp_qtcheck
 endif
 
 #Define compiler flags to build qconf
-HOSTLOADLIBES_qconf	= $(KC_QT_LIBS)
-HOSTCXXFLAGS_qconf.o	= $(KC_QT_CFLAGS)
 
 qconf.o: qconf.moc
 qconf.o: CXXFLAGS+=$(HOSTCXXFLAGS_qconf.o)
