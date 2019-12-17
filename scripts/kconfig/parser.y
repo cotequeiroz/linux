@@ -286,7 +286,7 @@ choice_option: T_OPTIONAL T_EOL
 
 choice_option: T_RESET if_expr T_EOL
 {
-	menu_add_prop(P_RESET, NULL, NULL, $2);
+	menu_add_prop(P_RESET, NULL, $2);
 };
 
 choice_option: T_DEFAULT nonconst_symbol if_expr T_EOL
