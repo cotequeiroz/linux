@@ -138,7 +138,7 @@ struct property *menu_add_prop(enum prop_type type, char *prompt, struct expr *e
 			while (isspace(*prompt))
 				prompt++;
 		}
-		if (current_entry->prompt && current_entry != &rootmenu)
+		if (current_entry->prompt)
 			prop_warn(prop, "prompt redefined");
 
 		/* Apply all upper menus' visibilities to actual prompts. */
