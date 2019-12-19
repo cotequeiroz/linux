@@ -168,15 +168,12 @@ modpost_link vmlinux.o
 # modpost vmlinux.o to check for section mismatches
 ${MAKE} -f "${srctree}/scripts/Makefile.modpost" vmlinux.o
 
-# Update version
-info GEN .version
-if [ ! -r .version ]; then
-	rm -f .version;
-	echo 1 >.version;
-else
-	mv .version .old_version;
-	expr 0$(cat .old_version) + 1 >.version;
-fi;
+info MODINFO modules.builtin.modinfo
+${OBJCOPY} -j .modinfo -O binary vmlinux.o modules.builtin.modinfo
+info GEN modules.builtin
+# The second line aids cases where multiple modules share the same object.
+tr '\0' '\n' < modules.builtin.modinfo | sed -n 's/^[[:alnum:]:_]*\.file=//p' |
+	tr ' ' '\n' | uniq | sed -e 's:^:kernel/:' -e 's/$/.ko/' > modules.builtin
 
 # final build of init/
 ${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init
