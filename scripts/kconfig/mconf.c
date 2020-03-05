@@ -25,17 +25,13 @@
 static const char mconf_readme[] = N_(
 "Overview\n"
 "--------\n"
-"This interface lets you select features and parameters for the build.\n"
-"Features can either be built-in, modularized, or ignored. Parameters\n"
-"must be entered in as decimal or hexadecimal numbers or text.\n"
+"Some OpenWrt features may be built directly into the image.\n"
+"Some may be made into installable ipkg packages. Some features\n"
+"may be completely removed altogether.\n"
 "\n"
-"Menu items beginning with following braces represent features that\n"
-"  [ ] can be built in or removed\n"
-"  < > can be built in, modularized or removed\n"
-"  { } can be built in or modularized (selected by other feature)\n"
-"  - - are selected by other feature,\n"
-"while *, M or whitespace inside braces means to build in, build as\n"
-"a module or to exclude the feature respectively.\n"
+"Menu items beginning with [*], <M> or [ ] represent features\n"
+"configured to be included, built as package or removed respectively.\n"
+"Pointed brackets <> represent packaging capable features.\n"
 "\n"
 "To change any of these features, highlight it with the cursor\n"
 "keys and press <Y> to build it in, <M> to make it a module or\n"
@@ -802,6 +798,7 @@ static void conf_choice(struct menu *menu)
 	const char *prompt = _(menu_get_prompt(menu));
 	struct menu *child;
 	struct symbol *active;
+	struct property *prop;
 
 	active = sym_get_choice_value(menu->sym);
 	while (1) {
@@ -839,6 +836,15 @@ static void conf_choice(struct menu *menu)
 				if (!child->sym)
 					break;
 
+				if (sym_get_tristate_value(child->sym) != yes) {
+					for_all_properties(menu->sym, prop, P_RESET) {
+						if (expr_calc_value(prop->visible.expr) == no)
+							continue;
+
+						conf_reset(S_DEF_USER);
+						break;
+					}
+				}
 				sym_set_tristate_value(child->sym, yes);
 			}
 			return;

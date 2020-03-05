@@ -5,6 +5,7 @@
 
 #include <locale.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +42,7 @@ static int tty_stdio;
 static int valid_stdin = 1;
 static int sync_kconfig;
 static int conf_cnt;
-static char line[128];
+static char line[PATH_MAX];
 static struct menu *rootEntry;
 
 static void print_help(struct menu *menu)
@@ -74,9 +75,9 @@ static void strip(char *str)
 static void check_stdin(void)
 {
 	if (!valid_stdin) {
-		printf(_("aborted!\n\n"));
-		printf(_("Console input/output is redirected. "));
-		printf(_("Run 'make oldconfig' to update configuration.\n\n"));
+	        printf("%s",_("aborted!\n\n"));
+		printf("%s",_("Console input/output is redirected. "));
+		printf("%s",_("Run 'make oldconfig' to update configuration.\n\n"));
 		exit(1);
 	}
 }
@@ -86,7 +87,7 @@ static int conf_askvalue(struct symbol *sym, const char *def)
 	enum symbol_type type = sym_get_type(sym);
 
 	if (!sym_has_value(sym))
-		printf(_("(NEW) "));
+	        printf("%s",_("(NEW) "));
 
 	line[0] = '\n';
 	line[1] = 0;
@@ -109,7 +110,7 @@ static int conf_askvalue(struct symbol *sym, const char *def)
 		/* fall through */
 	case oldaskconfig:
 		fflush(stdout);
-		xfgets(line, 128, stdin);
+		xfgets(line, sizeof(line), stdin);
 		if (!tty_stdio)
 			printf("\n");
 		return 1;
@@ -287,7 +288,7 @@ static int conf_choice(struct menu *menu)
 			if (child->sym->name)
 				printf(" (%s)", child->sym->name);
 			if (!sym_has_value(child->sym))
-				printf(_(" (NEW)"));
+			        printf("%s",_(" (NEW)"));
 			printf("\n");
 		}
 		printf(_("%*schoice"), indent - 1, "");
@@ -311,7 +312,7 @@ static int conf_choice(struct menu *menu)
 			/* fall through */
 		case oldaskconfig:
 			fflush(stdout);
-			xfgets(line, 128, stdin);
+			xfgets(line, sizeof(line), stdin);
 			strip(line);
 			if (line[0] == '?') {
 				print_help(menu);
@@ -435,7 +436,7 @@ static void check_conf(struct menu *menu)
 				}
 			} else if (input_mode != olddefconfig) {
 				if (!conf_cnt++)
-					printf(_("*\n* Restart config...\n*\n"));
+				        printf("%s",_("*\n* Restart config...\n*\n"));
 				rootEntry = menu_get_parent_menu(menu);
 				conf(rootEntry);
 			}
@@ -494,6 +495,7 @@ int main(int ac, char **av)
 	int opt;
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
 	struct stat tmpstat;
+	const char *input_file = NULL, *output_file = NULL;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
@@ -501,12 +503,11 @@ int main(int ac, char **av)
 
 	tty_stdio = isatty(0) && isatty(1) && isatty(2);
 
-	while ((opt = getopt_long(ac, av, "s", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "r:w:s", long_opts, NULL)) != -1) {
 		if (opt == 's') {
 			conf_set_message_callback(NULL);
 			continue;
 		}
-		input_mode = (enum input_mode)opt;
 		switch (opt) {
 		case silentoldconfig:
 			sync_kconfig = 1;
@@ -549,11 +550,18 @@ int main(int ac, char **av)
 		case listnewconfig:
 		case olddefconfig:
 			break;
+		case 'r':
+			input_file = optarg;
+			continue;
+		case 'w':
+			output_file = optarg;
+			continue;
 		case '?':
 			conf_usage(progname);
 			exit(1);
 			break;
 		}
+		input_mode = (enum input_mode)opt;
 	}
 	if (ac == optind) {
 		printf(_("%s: Kconfig file missing\n"), av[0]);
@@ -593,40 +601,12 @@ int main(int ac, char **av)
 	case oldconfig:
 	case listnewconfig:
 	case olddefconfig:
-		conf_read(NULL);
-		break;
 	case allnoconfig:
 	case allyesconfig:
 	case allmodconfig:
 	case alldefconfig:
 	case randconfig:
-		name = getenv("KCONFIG_ALLCONFIG");
-		if (!name)
-			break;
-		if ((strcmp(name, "") != 0) && (strcmp(name, "1") != 0)) {
-			if (conf_read_simple(name, S_DEF_USER)) {
-				fprintf(stderr,
-					_("*** Can't read seed configuration \"%s\"!\n"),
-					name);
-				exit(1);
-			}
-			break;
-		}
-		switch (input_mode) {
-		case allnoconfig:	name = "allno.config"; break;
-		case allyesconfig:	name = "allyes.config"; break;
-		case allmodconfig:	name = "allmod.config"; break;
-		case alldefconfig:	name = "alldef.config"; break;
-		case randconfig:	name = "allrandom.config"; break;
-		default: break;
-		}
-		if (conf_read_simple(name, S_DEF_USER) &&
-		    conf_read_simple("all.config", S_DEF_USER)) {
-			fprintf(stderr,
-				_("*** KCONFIG_ALLCONFIG set, but no \"%s\" or \"all.config\" file found\n"),
-				name);
-			exit(1);
-		}
+		conf_read(input_file);
 		break;
 	default:
 		break;
@@ -689,7 +669,8 @@ int main(int ac, char **av)
 		/* silentoldconfig is used during the build so we shall update autoconf.
 		 * All other commands are only used to generate a config.
 		 */
-		if (conf_get_changed() && conf_write(NULL)) {
+		if ((output_file || conf_get_changed()) &&
+		    conf_write(output_file)) {
 			fprintf(stderr, _("\n*** Error during writing of the configuration.\n\n"));
 			exit(1);
 		}
@@ -704,7 +685,7 @@ int main(int ac, char **av)
 			return 1;
 		}
 	} else if (input_mode != listnewconfig) {
-		if (conf_write(NULL)) {
+		if (conf_write(output_file)) {
 			fprintf(stderr, _("\n*** Error during writing of the configuration.\n\n"));
 			exit(1);
 		}

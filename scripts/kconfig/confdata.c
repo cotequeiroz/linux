@@ -248,6 +248,31 @@ e_out:
 	return -1;
 }
 
+void conf_reset(int def)
+{
+	struct symbol *sym;
+	int i, def_flags;
+
+	def_flags = SYMBOL_DEF << def;
+	for_all_symbols(i, sym) {
+		sym->flags |= SYMBOL_CHANGED;
+		sym->flags &= ~(def_flags|SYMBOL_VALID);
+		if (sym_is_choice(sym))
+			sym->flags |= def_flags;
+		switch (sym->type) {
+		case S_INT:
+		case S_HEX:
+		case S_STRING:
+			if (sym->def[def].val)
+				free(sym->def[def].val);
+			/* fall through */
+		default:
+			sym->def[def].val = NULL;
+			sym->def[def].tri = no;
+		}
+	}
+}
+
 int conf_read_simple(const char *name, int def)
 {
 	FILE *in = NULL;
@@ -255,7 +280,7 @@ int conf_read_simple(const char *name, int def)
 	size_t  line_asize = 0;
 	char *p, *p2;
 	struct symbol *sym;
-	int i, def_flags;
+	int def_flags;
 
 	if (name) {
 		in = zconf_fopen(name);
@@ -267,10 +292,8 @@ int conf_read_simple(const char *name, int def)
 		if (in)
 			goto load;
 		sym_add_change_count(1);
-		if (!sym_defconfig_list) {
-			sym_calc_value(modules_sym);
+		if (!sym_defconfig_list)
 			return 1;
-		}
 
 		for_all_defaults(sym_defconfig_list, prop) {
 			if (expr_calc_value(prop->visible.expr) == no ||
@@ -295,23 +318,7 @@ load:
 	conf_unsaved = 0;
 
 	def_flags = SYMBOL_DEF << def;
-	for_all_symbols(i, sym) {
-		sym->flags |= SYMBOL_CHANGED;
-		sym->flags &= ~(def_flags|SYMBOL_VALID);
-		if (sym_is_choice(sym))
-			sym->flags |= def_flags;
-		switch (sym->type) {
-		case S_INT:
-		case S_HEX:
-		case S_STRING:
-			if (sym->def[def].val)
-				free(sym->def[def].val);
-			/* fall through */
-		default:
-			sym->def[def].val = NULL;
-			sym->def[def].tri = no;
-		}
-	}
+	conf_reset(def);
 
 	while (compat_getline(&line, &line_asize, in) != -1) {
 		conf_lineno++;
@@ -335,9 +342,6 @@ load:
 				sym = sym_lookup(line + 2 + strlen(CONFIG_), 0);
 				if (sym->type == S_UNKNOWN)
 					sym->type = S_BOOLEAN;
-			}
-			if (sym->flags & def_flags) {
-				conf_warning("override: reassigning to symbol %s", sym->name);
 			}
 			switch (sym->type) {
 			case S_BOOLEAN:
@@ -370,14 +374,13 @@ load:
 				if (sym->type == S_UNKNOWN)
 					sym->type = S_OTHER;
 			}
-			if (sym->flags & def_flags) {
-				conf_warning("override: reassigning to symbol %s", sym->name);
-			}
 			if (conf_set_sym_val(sym, def, def_flags, p))
 				continue;
 		} else {
 			if (line[0] != '\r' && line[0] != '\n')
-				conf_warning("unexpected data");
+				conf_warning("unexpected data: %.*s",
+					     (int)strcspn(line, "\r\n"), line);
+
 			continue;
 		}
 setsym:
@@ -403,7 +406,6 @@ setsym:
 	}
 	free(line);
 	fclose(in);
-	sym_calc_value(modules_sym);
 	return 0;
 }
 
@@ -414,8 +416,12 @@ int conf_read(const char *name)
 
 	sym_set_change_count(0);
 
-	if (conf_read_simple(name, S_DEF_USER))
+	if (conf_read_simple(name, S_DEF_USER)) {
+		sym_calc_value(modules_sym);
 		return 1;
+	}
+
+	sym_calc_value(modules_sym);
 
 	for_all_symbols(i, sym) {
 		sym_calc_value(sym);
@@ -846,6 +852,7 @@ static int conf_split_config(void)
 
 	name = conf_get_autoconfig_name();
 	conf_read_simple(name, S_DEF_AUTO);
+	sym_calc_value(modules_sym);
 
 	if (chdir("include/config"))
 		return 1;
@@ -1166,6 +1173,8 @@ bool conf_set_all_new_symbols(enum conf_def_mode mode)
 	}
 	bool has_changed = false;
 
+	sym_clear_all_valid();
+
 	for_all_symbols(i, sym) {
 		if (sym_has_value(sym) || (sym->flags & SYMBOL_VALID))
 			continue;
@@ -1208,8 +1217,6 @@ bool conf_set_all_new_symbols(enum conf_def_mode mode)
 		}
 
 	}
-
-	sym_clear_all_valid();
 
 	/*
 	 * We have different type of choice blocks.
