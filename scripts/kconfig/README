@@ -1,2 +1,4 @@
 These files were taken from the Linux 3.9 Kernel
 Configuration System and modified for the OpenWrt Buildroot.
+
+They have been updated to commit 089b7d890f972f6b649fedc9259f6b93a18fb970
