@@ -14,16 +14,6 @@ HOSTCFLAGS_parser.tab.o	:= -I $(srctree)/$(src)
 hostprogs-y	+= conf
 conf-objs	:= conf.o $(common-objs)
 
-# nconf: Used for the nconfig target based on ncurses
-hostprogs-y	+= nconf
-nconf-objs	:= nconf.o nconf.gui.o $(common-objs)
-
-HOSTLDLIBS_nconf	= $(shell . $(obj)/nconf-cfg && echo $$libs)
-HOSTCFLAGS_nconf.o	= $(shell . $(obj)/nconf-cfg && echo $$cflags)
-HOSTCFLAGS_nconf.gui.o	= $(shell . $(obj)/nconf-cfg && echo $$cflags)
-
-$(obj)/nconf.o $(obj)/nconf.gui.o: $(obj)/nconf-cfg
-
 # mconf: Used for the menuconfig target based on lxdialog
 hostprogs-y	+= mconf
 lxdialog	:= $(addprefix lxdialog/, \
