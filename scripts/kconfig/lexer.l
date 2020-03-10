@@ -141,12 +141,12 @@ n	[A-Za-z0-9_-]
 				new_string();
 				BEGIN(STRING);
 			}
-{n}+			{
+({n}|[/.])+		{
 				alloc_string(yytext, yyleng);
 				yylval.string = text;
 				return T_WORD;
 			}
-({n}|$)+		{
+({n}|[/.$])+		{
 				/* this token includes at least one '$' */
 				yylval.string = expand_token(yytext, yyleng);
 				if (strlen(yylval.string))
