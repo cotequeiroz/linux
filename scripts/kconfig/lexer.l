@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glob.h>
+#include <libgen.h>
 
 #include "lkc.h"
 #include "parser.tab.h"
@@ -397,7 +399,7 @@ void zconf_initscan(const char *name)
 	yylineno = 1;
 }
 
-void zconf_nextfile(const char *name)
+static void __zconf_nextfile(const char *name)
 {
 	struct file *iter;
 	struct file *file = file_lookup(name);
@@ -436,6 +438,57 @@ void zconf_nextfile(const char *name)
 
 	yylineno = 1;
 	current_file = file;
+}
+
+void zconf_nextfile(const char *name)
+{
+	glob_t gl;
+	int err;
+	int i;
+	char path[PATH_MAX], *p;
+
+	err = glob(name, GLOB_ERR | GLOB_MARK, NULL, &gl);
+
+	/* ignore wildcard patterns that return no result */
+	if (err == GLOB_NOMATCH && strchr(name, '*')) {
+		err = 0;
+		gl.gl_pathc = 0;
+	}
+
+	if (err == GLOB_NOMATCH) {
+		p = strdup(current_file->name);
+		if (p) {
+			snprintf(path, sizeof(path), "%s/%s", dirname(p), name);
+			err = glob(path, GLOB_ERR | GLOB_MARK, NULL, &gl);
+			free(p);
+		}
+	}
+
+	if (err) {
+		const char *reason = "unknown error";
+
+		switch (err) {
+		case GLOB_NOSPACE:
+			reason = "out of memory";
+			break;
+		case GLOB_ABORTED:
+			reason = "read error";
+			break;
+		case GLOB_NOMATCH:
+			reason = "No files found";
+			break;
+		default:
+			break;
+		}
+
+		printf("%s:%d: glob failed: %s \"%s\"\n", zconf_curname(), zconf_lineno(),
+			reason, name);
+
+		exit(1);
+	}
+
+	for (i = 0; i < gl.gl_pathc; i++)
+		__zconf_nextfile(gl.gl_pathv[i]);
 }
 
 static void zconf_endfile(void)
