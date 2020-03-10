@@ -732,12 +732,12 @@ int main(int ac, char **av)
 	const char *progname = av[0];
 	int opt;
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
-	char *output = NULL;
+	const char *input_file = NULL, *output_file = NULL;
 	int no_conf_write = 0;
 
 	tty_stdio = isatty(0) && isatty(1);
 
-	while ((opt = getopt_long(ac, av, "hsw:", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "hr:sw:", long_opts, NULL)) != -1) {
 		switch (opt) {
 		case 'h':
 			conf_usage(progname);
@@ -746,8 +746,11 @@ int main(int ac, char **av)
 		case 's':
 			conf_set_message_callback(NULL);
 			break;
+		case 'r':
+			input_file = optarg;
+			break;
 		case 'w':
-			output = optarg;
+			output_file = optarg;
 			break;
 		case 0:
 			input_mode = input_mode_opt;
@@ -808,7 +811,7 @@ int main(int ac, char **av)
 	case allmodconfig:
 	case alldefconfig:
 	case randconfig:
-		conf_read(NULL);
+		conf_read(input_file);
 		break;
 	default:
 		break;
@@ -881,7 +884,8 @@ int main(int ac, char **av)
 			return 1;
 		}
 	} else if (input_mode != listnewconfig && input_mode != helpnewconfig) {
-		if (!no_conf_write && conf_write(output)) {
+		if ((output_file || !no_conf_write) &&
+		    conf_write(output_file)) {
 			fprintf(stderr, "\n*** Error during writing of the configuration.\n\n");
 			exit(1);
 		}
