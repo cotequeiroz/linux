@@ -1,4 +1,31 @@
 # ===========================================================================
+# OpenWrt configuration targets
+
+.PHONY: clean all $(PHONY)
+all: conf mconf
+clean:
+	rm -f *.o lxdialog/*.o *.moc $(clean-files) conf mconf nconf qconf
+
+# ===========================================================================
+# Variables needed by the upstream Makefile
+
+HOSTCC := $(CC)
+HOSTCFLAGS:= $(CFLAGS)
+CFLAGS += $(HOST_EXTRACFLAGS)
+CXXFLAGS += $(HOST_EXTRACFLAGS)
+
+kecho:=true
+
+CONFIG_SHELL:=$(SHELL)
+srctree:=.
+src:=.
+obj:=.
+Q:=$(if $V,,@)
+cmd = $(cmd_$(1))
+dot-target = $(dir $@).$(notdir $@)
+
+### Stripped down upstream Makefile follows
+# ===========================================================================
 
 # lxdialog stuff
 check-lxdialog  := $(srctree)/$(src)/lxdialog/check-lxdialog.sh
@@ -54,7 +81,9 @@ HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOS
 
 $(obj)/qconf.o: $(obj)/.tmp_qtcheck
 
-ifeq ($(MAKECMDGOALS),xconfig)
+# openwrt: target is qconf, not xconfig
+#ifeq ($(MAKECMDGOALS)),xconfig)
+ifeq ($(filter qconf,$(MAKECMDGOALS)),qconf)
 $(obj)/.tmp_qtcheck: $(src)/Makefile
 -include $(obj)/.tmp_qtcheck
 
@@ -90,3 +119,40 @@ quiet_cmd_moc = MOC     $@
 
 $(obj)/%.moc: $(src)/%.h $(obj)/.tmp_qtcheck
 	$(call cmd,moc)
+
+# ===========================================================================
+# OpenWrt rules and final adjustments that need to be made after reading the
+# full upstream Makefile
+
+FORCE:
+
+%.tab.c: %.y
+	bison -l -b $* -p $(notdir $*) $<
+
+%.lex.c: %.l
+	flex -L -P$(notdir $*) -o$@ $<
+
+%.hash.c: %.gperf
+	gperf < $< > $@
+
+$(foreach f, mconf.o $(lxdialog), \
+  $(eval $f: CFLAGS+=$$(HOSTCFLAGS_$f)))
+
+$(obj)/zconf.lex.o: CFLAGS += $(HOSTCFLAGS_zconf.lex.o)
+$(obj)/zconf.tab.o: CFLAGS += $(HOSTCFLAGS_zconf.tab.o)
+$(obj)/qconf.o: CXXFLAGS+=$(HOSTCXXFLAGS_qconf.o)
+
+conf: $(conf-objs)
+
+# The *conf-cfg file is used (then filtered out) as the first prerequisite to
+# avoid sourcing it before the script is built, when trying to compute CFLAGS
+# for the actual first prerequisite.  This avoids errors like:
+# '/bin/sh: ./mconf-cfg: No such file or directory'
+mconf: $(mconf-objs)
+	$(CC) -o $@ $(filter-out mconf-cfg,$^) $(HOSTLOADLIBES_mconf)
+
+nconf: $(nconf-objs)
+	$(CC) -o $@ $(filter-out nconf-cfg,$^) $(HOSTLOADLIBES_nconf)
+
+qconf: $(qconf-cxxobjs) $(qconf-objs)
+	$(CXX) -o $@ $(filter-out qconf-cfg,$^) $(HOSTLOADLIBES_qconf)
