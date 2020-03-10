@@ -25,6 +25,9 @@
 #define JUMP_NB			9
 
 static const char mconf_readme[] =
+"OpenWrt config is based on Kernel kconfig\n"
+"so ipkg packages are referred here as modules.\n"
+"\n"
 "Overview\n"
 "--------\n"
 "This interface lets you select features and parameters for the build.\n"
