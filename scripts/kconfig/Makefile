@@ -1,6 +1,28 @@
 # SPDX-License-Identifier: GPL-2.0
 # ===========================================================================
+# OpenWrt configuration targets
 
+.PHONY: clean all
+all: conf mconf
+clean:
+	rm -f $(clean-files) $(hostprogs)
+
+clean-files	:= *.o lxdialog/*.o *.moc qconf-moc.cc \
+		   lexer.lex.c parser.tab.c parser.tab.h \
+		   *conf-cfg # <- This should be removed after 23.05 is EOL
+
+# ===========================================================================
+# Variables needed by the upstream Makefile
+
+export HOSTPKG_CONFIG=pkg-config
+CONFIG_SHELL:=$(SHELL)
+src:=$(CURDIR)
+obj:=.
+Q:=$(if $V,,@)
+quiet:=$(if $V,,_silent)
+include Kbuild.include
+
+### Stripped down upstream Makefile follows:
 # ===========================================================================
 # object files used by all kconfig flavours
 common-objs	:= confdata.o expr.o lexer.lex.o menu.o parser.tab.o \
@@ -64,3 +86,34 @@ $(obj)/%conf-cflags $(obj)/%conf-libs $(obj)/%conf-bin: $(src)/%conf-cfg.sh
 	$(call cmd,conf_cfg)
 
 clean-files += *conf-cflags *conf-libs *conf-bin
+
+# ===========================================================================
+# OpenWrt rules and final adjustments that need to be made after reading the
+# full upstream Makefile
+
+FORCE:
+
+%.tab.c %.tab.h: %.y
+	bison -l -d -b $* $<
+
+%.lex.c: %.l
+	flex -L -o$@ $<
+
+define link_rule
+$(1): LDLIBS+=$$(HOSTLDLIBS_$(1))
+$(1): $($(1)-objs) $$($(1)-cxxobjs)
+$(if $($(1)-cxxobjs),	$(CXX) $$(LDFLAGS) -o $$@ $$^ $$(LDLIBS))
+all-objs += $($(1)-objs)
+all-cxxobjs += $($(1)-cxxobjs)
+endef
+
+all-objs:=
+all-cxxobjs:=
+$(foreach f,$(hostprogs),$(eval $(call link_rule,$f)))
+
+
+$(foreach f,$(sort $(all-objs)), \
+  $(eval $f: CFLAGS+=$$(HOSTCFLAGS_$f)))
+
+$(foreach f,$(sort $(all-cxxobjs)), \
+  $(eval $f: CXXFLAGS+=$$(HOSTCXXFLAGS_$f)))
