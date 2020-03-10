@@ -504,8 +504,10 @@ void conf_parse(const char *name)
 	_menu_init();
 	rootmenu.prompt = menu_add_prompt(P_MENU, "Linux Kernel Configuration", NULL);
 
+#if YYDEBUG
 	if (getenv("ZCONF_DEBUG"))
 		zconfdebug = 1;
+#endif
 	zconfparse();
 	if (zconfnerrs)
 		exit(1);
