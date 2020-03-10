@@ -484,8 +484,10 @@ void conf_parse(const char *name)
 
 	_menu_init();
 
+#if YYDEBUG
 	if (getenv("ZCONF_DEBUG"))
 		yydebug = 1;
+#endif
 	yyparse();
 
 	/* Variables are expanded in the parse phase. We can free them here. */
