@@ -1,6 +1,49 @@
 # SPDX-License-Identifier: GPL-2.0
 # ===========================================================================
+# OpenWrt configuration targets
 
+.PHONY: clean all
+all: conf mconf
+clean:
+	rm -f *.o lxdialog/*.o *.moc .*.cmd $(clean-files)
+
+clean-files	:= lexer.lex.c parser.tab.c parser.tab.h
+
+# ===========================================================================
+# Variables needed by the upstream Makefile
+
+# Avoids displaying 'UPD mconf-cfg' in an otherwise quiet make menuconfig
+kecho:=true
+
+CONFIG_SHELL:=$(SHELL)
+srctree:=.
+src:=.
+obj:=.
+Q:=$(if $V,,@)
+cmd = $(cmd_$(1))
+
+# some definitions taken from ../Kbuild.include
+dot-target = $(dir $@).$(notdir $@)
+squote  := '
+escsq = $(subst $(squote),'\$(squote)',$1)
+define filechk
+	$(Q)set -e;						\
+	mkdir -p $(dir $@);					\
+	trap "rm -f $(dot-target).tmp" EXIT;			\
+	{ $(filechk_$(1)); } > $(dot-target).tmp;		\
+	if [ ! -r $@ ] || ! cmp -s $@ $(dot-target).tmp; then	\
+		$(kecho) '  UPD     $@';			\
+		mv -f $(dot-target).tmp $@;			\
+	fi
+endef
+cmd-check = $(if $(strip $(cmd_$@)),,1)
+make-cmd = $(call escsq,$(subst $(pound),$$(pound),$(subst $$,$$$$,$(cmd_$(1)))))
+newer-prereqs = $(filter-out $(PHONY),$?)
+if_changed = $(if $(newer-prereqs)$(cmd-check),			\
+	$(cmd);							\
+	printf '%s\n' 'cmd_$@ := $(make-cmd)' > $(dot-target).cmd, @:)
+
+### Stripped down upstream Makefile follows:
 # ===========================================================================
 # object files used by all kconfig flavours
 common-objs	:= confdata.o expr.o lexer.lex.o menu.o parser.tab.o \
@@ -62,3 +105,40 @@ $(obj)/%conf-cfg: $(src)/%conf-cfg.sh FORCE
 	$(call filechk,conf_cfg)
 
 clean-files += *conf-cfg
+
+# ===========================================================================
+# OpenWrt rules and final adjustments that need to be made after reading the
+# full upstream Makefile
+
+clean-files += $(targets) $(hostprogs)
+
+FORCE:
+
+%.tab.c %.tab.h: %.y
+	bison -l -d -b $* $<
+
+%.lex.c: %.l
+	flex -L -o$@ $<
+
+$(foreach f,$(conf-objs) $(filter-out $(common-objs),$(mconf-objs) \
+						     $(qconf-objs) \
+						     $(nconf-objs)), \
+  $(eval $(obj)/$f: CFLAGS+=$$(HOSTCFLAGS_$f)))
+
+$(foreach f,$(qconf-cxxobjs), \
+  $(eval $(obj)/$f: CXXFLAGS+=$$(HOSTCXXFLAGS_$f)))
+
+$(obj)/conf: $(addprefix $(obj)/,$(conf-objs))
+
+# The *conf-cfg file is used (then filtered out) as the first prerequisite to
+# avoid sourcing it before the script is built, when trying to compute CFLAGS
+# for the actual first prerequisite.  This avoids errors like:
+# '/bin/sh: ./mconf-cfg: No such file or directory'
+$(obj)/mconf: mconf-cfg $(addprefix $(obj)/,$(mconf-objs))
+	$(CC) -o $@ $(filter-out mconf-cfg,$^) $(HOSTLDLIBS_mconf)
+
+$(obj)/nconf: nconf-cfg $(addprefix $(obj)/,$(nconf-objs))
+	$(CC) -o $@ $(filter-out nconf-cfg,$^) $(HOSTLDLIBS_nconf)
+
+$(obj)/qconf: qconf-cfg $(addprefix $(obj)/,$(qconf-cxxobjs) $(qconf-objs))
+	$(CXX) -o $@ $(filter-out qconf-cfg,$^) $(HOSTLDLIBS_qconf)
