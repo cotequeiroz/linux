@@ -4,7 +4,7 @@
 .PHONY: clean all $(PHONY)
 all: conf mconf
 clean:
-	rm -f *.o lxdialog/*.o *.moc $(clean-files) conf mconf nconf qconf
+	rm -f *.o lxdialog/*.o *.moc $(clean-files) conf mconf qconf
 
 # ===========================================================================
 # Variables needed by the upstream Makefile
@@ -38,8 +38,6 @@ HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
 # ===========================================================================
 # Shared Makefile for the various kconfig executables:
 # conf:	  Used for defconfig, oldconfig and related targets
-# nconf:  Used for the nconfig target.
-#         Utilizes ncurses
 # mconf:  Used for the menuconfig target
 #         Utilizes the lxdialog package
 # qconf:  Used for the xconfig target
@@ -51,11 +49,10 @@ lxdialog += lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 
 conf-objs	:= conf.o  zconf.tab.o
 mconf-objs     := mconf.o zconf.tab.o $(lxdialog)
-nconf-objs     := nconf.o zconf.tab.o nconf.gui.o
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 
-hostprogs-y := conf nconf mconf qconf
+hostprogs-y := conf mconf qconf
 
 clean-files	:= qconf.moc .tmp_qtcheck
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c
@@ -82,10 +79,6 @@ HOSTCXXFLAGS_qconf.o	= $(KC_QT_CFLAGS)
 
 HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
 
-HOSTLOADLIBES_nconf	= $(shell \
-				pkg-config --libs menuw panelw ncursesw 2>/dev/null \
-				|| pkg-config --libs menu panel ncurses 2>/dev/null \
-				|| echo "-lmenu -lpanel -lncurses"  )
 $(obj)/qconf.o: $(obj)/.tmp_qtcheck
 
 # openwrt: target is qconf, not xconfig
@@ -157,9 +150,6 @@ conf: $(conf-objs)
 # '/bin/sh: ./mconf-cfg: No such file or directory'
 mconf: $(mconf-objs)
 	$(CC) -o $@ $(filter-out mconf-cfg,$^) $(HOSTLOADLIBES_mconf)
-
-nconf: $(nconf-objs)
-	$(CC) -o $@ $(filter-out nconf-cfg,$^) $(HOSTLOADLIBES_nconf)
 
 qconf: $(qconf-cxxobjs) $(qconf-objs)
 	$(CXX) -o $@ $(filter-out qconf-cfg,$^) $(HOSTLOADLIBES_qconf)
