@@ -558,7 +558,8 @@ static char *expand_string(const char *in)
 
 static bool is_end_of_token(char c)
 {
-	return !(isalnum(c) || c == '_' || c == '-');
+	/* Why are '.' and '/' valid characters for symbols? */
+	return !(isalnum(c) || c == '_' || c == '-' || c == '.' || c == '/');
 }
 
 /*
