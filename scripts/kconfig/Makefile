@@ -57,16 +57,6 @@ $(obj)/qconf-moc.cc: $(src)/qconf.h FORCE | $(obj)/qconf-bin
 
 targets += qconf-moc.cc
 
-# gconf: Used for the gconfig target based on GTK+
-hostprogs	+= gconf
-gconf-objs	:= gconf.o images.o $(common-objs)
-
-HOSTLDLIBS_gconf   = $(call read-file, $(obj)/gconf-libs)
-HOSTCFLAGS_gconf.o = $(call read-file, $(obj)/gconf-cflags)
-
-$(obj)/gconf: | $(obj)/gconf-libs
-$(obj)/gconf.o: | $(obj)/gconf-cflags
-
 # check if necessary packages are available, and configure build flags
 cmd_conf_cfg = $< $(addprefix $(obj)/$*conf-, cflags libs bin); touch $(obj)/$*conf-bin
 
