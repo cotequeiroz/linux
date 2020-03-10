@@ -1306,6 +1306,8 @@ const char *prop_get_type_name(enum prop_type type)
 		return "range";
 	case P_SYMBOL:
 		return "symbol";
+	case P_RESET:
+		return "reset";
 	case P_UNKNOWN:
 		break;
 	}

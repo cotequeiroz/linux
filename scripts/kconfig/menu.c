@@ -126,8 +126,8 @@ void menu_set_type(int type)
 		sym_type_name(sym->type), sym_type_name(type));
 }
 
-static struct property *menu_add_prop(enum prop_type type, struct expr *expr,
-				      struct expr *dep)
+struct property *menu_add_prop(enum prop_type type, struct expr *expr,
+			       struct expr *dep)
 {
 	struct property *prop;
 

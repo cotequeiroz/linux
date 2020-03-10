@@ -74,6 +74,7 @@ struct menu *current_menu, *current_entry;
 %token T_PLUS_EQUAL
 %token T_PROMPT
 %token T_RANGE
+%token T_RESET
 %token T_SELECT
 %token T_SOURCE
 %token T_STRING
@@ -276,6 +277,11 @@ choice_option: T_OPTIONAL T_EOL
 {
 	current_entry->sym->flags |= SYMBOL_OPTIONAL;
 	printd(DEBUG_PARSE, "%s:%d:optional\n", zconf_curname(), zconf_lineno());
+};
+
+choice_option: T_RESET if_expr T_EOL
+{
+	menu_add_prop(P_RESET, NULL, $2);
 };
 
 choice_option: T_DEFAULT nonconst_symbol if_expr T_EOL
