@@ -17,8 +17,6 @@ HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
 #         Utilizes the lxdialog package
 # qconf:  Used for the xconfig target
 #         Based on Qt which needs to be installed to compile it
-# gconf:  Used for the gconfig target
-#         Based on GTK+ which needs to be installed to compile it
 # object files used by all kconfig flavours
 
 lxdialog := lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o
@@ -29,12 +27,11 @@ mconf-objs     := mconf.o zconf.tab.o $(lxdialog)
 nconf-objs     := nconf.o zconf.tab.o nconf.gui.o
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
-gconf-objs	:= gconf.o zconf.tab.o
 
-hostprogs-y := conf nconf mconf qconf gconf
+hostprogs-y := conf nconf mconf qconf
 
-clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck
-clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
+clean-files	:= qconf.moc .tmp_qtcheck
+clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c
 
 # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
 PHONY += $(obj)/dochecklxdialog
@@ -55,10 +52,6 @@ YACC_PREFIX_zconf	:= zconf
 
 HOSTLOADLIBES_qconf	= $(KC_QT_LIBS)
 HOSTCXXFLAGS_qconf.o	= $(KC_QT_CFLAGS)
-
-HOSTLOADLIBES_gconf	= `pkg-config --libs gtk+-2.0 gmodule-2.0 libglade-2.0`
-HOSTCFLAGS_gconf.o	= `pkg-config --cflags gtk+-2.0 gmodule-2.0 libglade-2.0` \
-                          -Wno-missing-prototypes
 
 HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
 
@@ -93,32 +86,6 @@ $(obj)/.tmp_qtcheck:
 	echo "KC_QT_CFLAGS=$$cflags" > $@; \
 	echo "KC_QT_LIBS=$$libs" >> $@; \
 	echo "KC_QT_MOC=$$moc" >> $@
-endif
-
-$(obj)/gconf.o: $(obj)/.tmp_gtkcheck
-
-ifeq ($(MAKECMDGOALS),gconfig)
--include $(obj)/.tmp_gtkcheck
-
-# GTK+ needs some extra effort, too...
-$(obj)/.tmp_gtkcheck:
-	@if `pkg-config --exists gtk+-2.0 gmodule-2.0 libglade-2.0`; then		\
-		if `pkg-config --atleast-version=2.0.0 gtk+-2.0`; then			\
-			touch $@;								\
-		else									\
-			echo >&2 "*"; 							\
-			echo >&2 "* GTK+ is present but version >= 2.0.0 is required.";	\
-			echo >&2 "*";							\
-			false;								\
-		fi									\
-	else										\
-		echo >&2 "*"; 								\
-		echo >&2 "* Unable to find the GTK+ installation. Please make sure that"; 	\
-		echo >&2 "* the GTK+ 2.0 development package is correctly installed..."; 	\
-		echo >&2 "* You need gtk+-2.0, glib-2.0 and libglade-2.0."; 		\
-		echo >&2 "*"; 								\
-		false;									\
-	fi
 endif
 
 $(obj)/zconf.tab.o: $(obj)/zconf.lex.c $(obj)/zconf.hash.c
