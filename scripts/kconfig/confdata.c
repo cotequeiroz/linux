@@ -248,6 +248,31 @@ e_out:
 	return -1;
 }
 
+void conf_reset(int def)
+{
+	struct symbol *sym;
+	int i, def_flags;
+
+	def_flags = SYMBOL_DEF << def;
+	for_all_symbols(i, sym) {
+		sym->flags |= SYMBOL_CHANGED;
+		sym->flags &= ~(def_flags|SYMBOL_VALID);
+		if (sym_is_choice(sym))
+			sym->flags |= def_flags;
+		switch (sym->type) {
+		case S_INT:
+		case S_HEX:
+		case S_STRING:
+			if (sym->def[def].val)
+				free(sym->def[def].val);
+			/* fall through */
+		default:
+			sym->def[def].val = NULL;
+			sym->def[def].tri = no;
+		}
+	}
+}
+
 int conf_read_simple(const char *name, int def)
 {
 	FILE *in = NULL;
@@ -255,7 +280,7 @@ int conf_read_simple(const char *name, int def)
 	size_t  line_asize = 0;
 	char *p, *p2;
 	struct symbol *sym;
-	int i, def_flags;
+	int def_flags;
 
 	if (name) {
 		in = zconf_fopen(name);
@@ -293,23 +318,7 @@ load:
 	conf_unsaved = 0;
 
 	def_flags = SYMBOL_DEF << def;
-	for_all_symbols(i, sym) {
-		sym->flags |= SYMBOL_CHANGED;
-		sym->flags &= ~(def_flags|SYMBOL_VALID);
-		if (sym_is_choice(sym))
-			sym->flags |= def_flags;
-		switch (sym->type) {
-		case S_INT:
-		case S_HEX:
-		case S_STRING:
-			if (sym->def[def].val)
-				free(sym->def[def].val);
-			/* fall through */
-		default:
-			sym->def[def].val = NULL;
-			sym->def[def].tri = no;
-		}
-	}
+	conf_reset(def);
 
 	while (compat_getline(&line, &line_asize, in) != -1) {
 		conf_lineno++;
@@ -1170,6 +1179,8 @@ bool conf_set_all_new_symbols(enum conf_def_mode mode)
 	}
 	bool has_changed = false;
 
+	sym_clear_all_valid();
+
 	for_all_symbols(i, sym) {
 		if (sym_has_value(sym) || (sym->flags & SYMBOL_VALID))
 			continue;
@@ -1212,8 +1223,6 @@ bool conf_set_all_new_symbols(enum conf_def_mode mode)
 		}
 
 	}
-
-	sym_clear_all_valid();
 
 	/*
 	 * We have different type of choice blocks.

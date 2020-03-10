@@ -802,6 +802,7 @@ static void conf_choice(struct menu *menu)
 	const char *prompt = _(menu_get_prompt(menu));
 	struct menu *child;
 	struct symbol *active;
+	struct property *prop;
 
 	active = sym_get_choice_value(menu->sym);
 	while (1) {
@@ -839,6 +840,15 @@ static void conf_choice(struct menu *menu)
 				if (!child->sym)
 					break;
 
+				if (sym_get_tristate_value(child->sym) != yes) {
+					for_all_properties(menu->sym, prop, P_RESET) {
+						if (expr_calc_value(prop->visible.expr) == no)
+							continue;
+
+						conf_reset(S_DEF_USER);
+						break;
+					}
+				}
 				sym_set_tristate_value(child->sym, yes);
 			}
 			return;
