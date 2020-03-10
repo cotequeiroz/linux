@@ -494,8 +494,8 @@ int main(int ac, char **av)
 	const char *progname = av[0];
 	int opt;
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
-	char *output = NULL;
 	struct stat tmpstat;
+	const char *input_file = NULL, *output_file = NULL;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
@@ -503,12 +503,11 @@ int main(int ac, char **av)
 
 	tty_stdio = isatty(0) && isatty(1) && isatty(2);
 
-	while ((opt = getopt_long(ac, av, "w:s", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "r:w:s", long_opts, NULL)) != -1) {
 		if (opt == 's') {
 			conf_set_message_callback(NULL);
 			continue;
 		}
-		input_mode = (enum input_mode)opt;
 		switch (opt) {
 		case silentoldconfig:
 			sync_kconfig = 1;
@@ -551,14 +550,18 @@ int main(int ac, char **av)
 		case listnewconfig:
 		case olddefconfig:
 			break;
+		case 'r':
+			input_file = optarg;
+			continue;
 		case 'w':
-			output = optarg;
-			break;
+			output_file = optarg;
+			continue;
 		case '?':
 			conf_usage(progname);
 			exit(1);
 			break;
 		}
+		input_mode = (enum input_mode)opt;
 	}
 	if (ac == optind) {
 		printf(_("%s: Kconfig file missing\n"), av[0]);
@@ -603,7 +606,7 @@ int main(int ac, char **av)
 	case allmodconfig:
 	case alldefconfig:
 	case randconfig:
-		conf_read(NULL);
+		conf_read(input_file);
 		break;
 	default:
 		break;
@@ -666,7 +669,8 @@ int main(int ac, char **av)
 		/* silentoldconfig is used during the build so we shall update autoconf.
 		 * All other commands are only used to generate a config.
 		 */
-		if (conf_get_changed() && conf_write(NULL)) {
+		if ((output_file || conf_get_changed()) &&
+		    conf_write(output_file)) {
 			fprintf(stderr, _("\n*** Error during writing of the configuration.\n\n"));
 			exit(1);
 		}
@@ -681,7 +685,7 @@ int main(int ac, char **av)
 			return 1;
 		}
 	} else if (input_mode != listnewconfig) {
-		if (conf_write(output)) {
+		if (conf_write(output_file)) {
 			fprintf(stderr, _("\n*** Error during writing of the configuration.\n\n"));
 			exit(1);
 		}
