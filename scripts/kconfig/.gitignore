@@ -12,3 +12,9 @@ mconf
 nconf
 qconf
 gconf
+
+#
+# Added by openwrt
+#
+*.lex.c
+*.tab.[ch]
