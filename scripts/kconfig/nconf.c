@@ -1325,6 +1325,7 @@ static void conf_choice(struct menu *menu)
 	const char *prompt = menu_get_prompt(menu);
 	struct menu *child = NULL;
 	struct symbol *active;
+	struct property *prop;
 	int selected_index = 0;
 	int last_top_row = 0;
 	int res, i = 0;
@@ -1426,6 +1427,15 @@ static void conf_choice(struct menu *menu)
 		case ' ':
 		case  10:
 		case KEY_RIGHT:
+			if (sym_get_tristate_value(child->sym) != yes) {
+				for_all_properties(menu->sym, prop, P_RESET) {
+					if (expr_calc_value(prop->visible.expr) == no)
+						continue;
+
+					conf_reset(S_DEF_USER);
+					break;
+				}
+			}
 			sym_set_tristate_value(child->sym, yes);
 			return;
 		case 'h':
