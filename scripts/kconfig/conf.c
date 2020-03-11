@@ -502,11 +502,12 @@ int main(int ac, char **av)
 	const char *progname = av[0];
 	int opt;
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
+	char *output = NULL;
 	int no_conf_write = 0;
 
 	tty_stdio = isatty(0) && isatty(1);
 
-	while ((opt = getopt_long(ac, av, "s", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "w:s", long_opts, NULL)) != -1) {
 		if (opt == 's') {
 			conf_set_message_callback(NULL);
 			continue;
@@ -561,6 +562,9 @@ int main(int ac, char **av)
 		case olddefconfig:
 		case yes2modconfig:
 		case mod2yesconfig:
+			break;
+		case 'w':
+			output = optarg;
 			break;
 		case '?':
 			conf_usage(progname);
@@ -675,7 +679,7 @@ int main(int ac, char **av)
 			return 1;
 		}
 	} else if (input_mode != listnewconfig && input_mode != helpnewconfig) {
-		if (!no_conf_write && conf_write(NULL)) {
+		if (!no_conf_write && conf_write(output)) {
 			fprintf(stderr, "\n*** Error during writing of the configuration.\n\n");
 			exit(1);
 		}
