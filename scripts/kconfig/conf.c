@@ -692,7 +692,9 @@ static void conf_usage(const char *progname)
 	printf("\n");
 	printf("Generic options:\n");
 	printf("  -h, --help              Print this message and exit.\n");
+	printf("  -r <file>               Read <file> as input.\n");
 	printf("  -s, --silent            Do not print log.\n");
+	printf("  -w <file>               Write config to <file>.\n");
 	printf("\n");
 	printf("Mode options:\n");
 	printf("  --listnewconfig         List new options\n");
@@ -720,18 +722,25 @@ int main(int ac, char **av)
 	const char *progname = av[0];
 	int opt;
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
+	const char *input_file = NULL, *output_file = NULL;
 	int no_conf_write = 0;
 
 	tty_stdio = isatty(0) && isatty(1);
 
-	while ((opt = getopt_long(ac, av, "hs", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "hr:w:s", long_opts, NULL)) != -1) {
 		switch (opt) {
 		case 'h':
 			conf_usage(progname);
 			exit(1);
 			break;
+		case 'r':
+			input_file = optarg;
+			break;
 		case 's':
 			conf_set_message_callback(NULL);
+			break;
+		case 'w':
+			output_file = optarg;
 			break;
 		case 0:
 			input_mode = input_mode_opt;
@@ -758,6 +767,7 @@ int main(int ac, char **av)
 		default:
 			break;
 		}
+		input_mode = (enum input_mode)opt;
 	}
 	if (ac == optind) {
 		fprintf(stderr, "%s: Kconfig file missing\n", av[0]);
@@ -793,7 +803,7 @@ int main(int ac, char **av)
 	case allmodconfig:
 	case alldefconfig:
 	case randconfig:
-		conf_read(NULL);
+		conf_read(input_file);
 		break;
 	default:
 		break;
@@ -869,7 +879,8 @@ int main(int ac, char **av)
 			return 1;
 		}
 	} else if (input_mode != listnewconfig && input_mode != helpnewconfig) {
-		if (!no_conf_write && conf_write(NULL)) {
+		if ((output_file || !no_conf_write) &&
+		    conf_write(output_file)) {
 			fprintf(stderr, "\n*** Error during writing of the configuration.\n\n");
 			exit(1);
 		}
