@@ -799,40 +799,12 @@ int main(int ac, char **av)
 	case olddefconfig:
 	case yes2modconfig:
 	case mod2yesconfig:
-		conf_read(NULL);
-		break;
 	case allnoconfig:
 	case allyesconfig:
 	case allmodconfig:
 	case alldefconfig:
 	case randconfig:
-		name = getenv("KCONFIG_ALLCONFIG");
-		if (!name)
-			break;
-		if ((strcmp(name, "") != 0) && (strcmp(name, "1") != 0)) {
-			if (conf_read_simple(name, S_DEF_USER)) {
-				fprintf(stderr,
-					"*** Can't read seed configuration \"%s\"!\n",
-					name);
-				exit(1);
-			}
-			break;
-		}
-		switch (input_mode) {
-		case allnoconfig:	name = "allno.config"; break;
-		case allyesconfig:	name = "allyes.config"; break;
-		case allmodconfig:	name = "allmod.config"; break;
-		case alldefconfig:	name = "alldef.config"; break;
-		case randconfig:	name = "allrandom.config"; break;
-		default: break;
-		}
-		if (conf_read_simple(name, S_DEF_USER) &&
-		    conf_read_simple("all.config", S_DEF_USER)) {
-			fprintf(stderr,
-				"*** KCONFIG_ALLCONFIG set, but no \"%s\" or \"all.config\" file found\n",
-				name);
-			exit(1);
-		}
+		conf_read(NULL);
 		break;
 	default:
 		break;
