@@ -27,16 +27,14 @@ lxdialog += lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 conf-objs	:= conf.o  zconf.tab.o
 mconf-objs     := mconf.o zconf.tab.o $(lxdialog)
 nconf-objs     := nconf.o zconf.tab.o nconf.gui.o
-kxgettext-objs	:= kxgettext.o zconf.tab.o
 qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 gconf-objs	:= gconf.o zconf.tab.o
 
-hostprogs-y := conf nconf mconf kxgettext qconf gconf
+hostprogs-y := conf nconf mconf qconf gconf
 
 clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
-clean-files     += config.pot linux.pot
 
 # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
 PHONY += $(obj)/dochecklxdialog
@@ -46,8 +44,7 @@ $(obj)/dochecklxdialog:
 
 always := dochecklxdialog
 
-# Add environment specific flags
-HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(srctree)/$(src)/check.sh $(HOSTCC) $(HOSTCFLAGS))
+HOST_EXTRACFLAGS += -DKBUILD_NO_NLS
 
 # generated files seem to need this to find local include files
 HOSTCFLAGS_zconf.lex.o	:= -I$(src)
@@ -133,8 +130,3 @@ quiet_cmd_moc = MOC     $@
 
 $(obj)/%.moc: $(src)/%.h $(obj)/.tmp_qtcheck
 	$(call cmd,moc)
-
-# Extract gconf menu items for i18n support
-$(obj)/gconf.glade.h: $(obj)/gconf.glade
-	$(Q)intltool-extract --type=gettext/glade --srcdir=$(srctree) \
-	$(obj)/gconf.glade
