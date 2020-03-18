@@ -395,12 +395,6 @@ help_start: T_HELP T_EOL
 
 help: help_start T_HELPTEXT
 {
-	if (current_entry->help) {
-		free(current_entry->help);
-		zconfprint("warning: '%s' defined with more than one help text -- only the last one will be used",
-			   current_entry->sym->name ?: "<choice>");
-	}
-
 	/* Is the help text empty or all whitespace? */
 	if ($2[strspn($2, " \f\n\r\t\v")] == '\0')
 		zconfprint("warning: '%s' defined with blank help text",
