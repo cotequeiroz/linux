@@ -20,3 +20,8 @@ nconf
 qconf
 gconf
 kxgettext
+
+#
+# openwrt changes
+#
+.tmp*
