@@ -5,3 +5,12 @@
 /[gmnq]conf-cflags
 /[gmnq]conf-libs
 /qconf-moc.cc
+
+#
+# Added by openwrt
+#
+*.lex.c
+*.tab.[ch]
+mconf_check
+# The next line should be removed after 23.05 is EOL
+*conf-cfg
