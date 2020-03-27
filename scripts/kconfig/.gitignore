@@ -3,3 +3,9 @@
 /[gmnq]conf
 /[gmnq]conf-cfg
 /qconf-moc.cc
+
+# From linux kconfig parent directories
+.*
+
+# OpenWrt-generated files
+mconf_check
