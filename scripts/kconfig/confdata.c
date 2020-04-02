@@ -1064,6 +1064,9 @@ int conf_write_autoconf(int overwrite)
 	FILE *out, *out_h;
 	int i;
 
+#ifndef OPENWRT_DOES_NOT_WANT_THIS
+	return 0;
+#endif
 	if (!overwrite && is_present(autoconf_name))
 		return 0;
 
