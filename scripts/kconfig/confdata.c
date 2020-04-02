@@ -1202,6 +1202,9 @@ int conf_write_autoconf(int overwrite)
 	const char *autoconf_name = conf_get_autoconfig_name();
 	int ret, i;
 
+#ifndef OPENWRT_DOES_NOT_WANT_THIS
+	return 0;
+#endif
 	if (!overwrite && is_present(autoconf_name))
 		return 0;
 
