@@ -36,6 +36,7 @@ enum input_mode {
 	yes2modconfig,
 	mod2yesconfig,
 	mod2noconfig,
+	fatalrecursive,
 };
 static enum input_mode input_mode = oldaskconfig;
 static int input_mode_opt;
@@ -683,6 +684,7 @@ static const struct option long_opts[] = {
 	{"yes2modconfig", no_argument,       &input_mode_opt, yes2modconfig},
 	{"mod2yesconfig", no_argument,       &input_mode_opt, mod2yesconfig},
 	{"mod2noconfig",  no_argument,       &input_mode_opt, mod2noconfig},
+	{"fatalrecursive",no_argument,       &input_mode_opt, fatalrecursive},
 	{NULL, 0, NULL, 0}
 };
 
@@ -695,6 +697,7 @@ static void conf_usage(const char *progname)
 	printf("  -r <file>               Read <file> as input.\n");
 	printf("  -s, --silent            Do not print log.\n");
 	printf("  -w <file>               Write config to <file>.\n");
+	printf("  --fatalrecursive        Treat recursive dependency as error.\n");
 	printf("\n");
 	printf("Mode options:\n");
 	printf("  --listnewconfig         List new options\n");
@@ -743,8 +746,7 @@ int main(int ac, char **av)
 			output_file = optarg;
 			break;
 		case 0:
-			input_mode = input_mode_opt;
-			switch (input_mode) {
+			switch (input_mode_opt) {
 			case syncconfig:
 				/*
 				 * syncconfig is invoked during the build stage.
@@ -761,13 +763,16 @@ int main(int ac, char **av)
 			case randconfig:
 				set_randconfig_seed();
 				break;
+			case fatalrecursive:
+				recursive_is_error = 1;
+				continue;
 			default:
 				break;
 			}
+			input_mode = input_mode_opt;
 		default:
 			break;
 		}
-		input_mode = (enum input_mode)opt;
 	}
 	if (ac == optind) {
 		fprintf(stderr, "%s: Kconfig file missing\n", av[0]);
