@@ -16,6 +16,10 @@ OpenWrt Buildroot:
  - reverted an upstream change that avoids writing symbols that are not
    visible to .config, which breaks OpenWrt busybox's '.config' generation
    logic.
+ - add a compilation option (-DWARN_RECURSIVE_DEP) to treat recursive deps
+   as a warning, avoiding a complete build failure because of unrelated or
+   minor recursive deps, or making a scrict check before commiting a change
+   that may cause one.
 
 For a full list of changes, see the repository at:
 https://github.com/cotequeiroz/linux/commits/openwrt/scripts/kconfig
