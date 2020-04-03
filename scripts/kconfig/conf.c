@@ -35,6 +35,7 @@ enum input_mode {
 	olddefconfig,
 	yes2modconfig,
 	mod2yesconfig,
+	fatalrecursive,
 };
 static enum input_mode input_mode = oldaskconfig;
 static int input_mode_opt;
@@ -696,6 +697,7 @@ static const struct option long_opts[] = {
 	{"olddefconfig",  no_argument,       &input_mode_opt, olddefconfig},
 	{"yes2modconfig", no_argument,       &input_mode_opt, yes2modconfig},
 	{"mod2yesconfig", no_argument,       &input_mode_opt, mod2yesconfig},
+	{"fatalrecursive",no_argument,       NULL, fatalrecursive},
 	{NULL, 0, NULL, 0}
 };
 
@@ -706,6 +708,7 @@ static void conf_usage(const char *progname)
 	printf("Generic options:\n");
 	printf("  -h, --help              Print this message and exit.\n");
 	printf("  -s, --silent            Do not print log.\n");
+	printf("      --fatalrecursive    Treat recursive depenendencies as a fatal error\n");
 	printf("\n");
 	printf("Mode options:\n");
 	printf("  --listnewconfig         List new options\n");
@@ -746,6 +749,9 @@ int main(int ac, char **av)
 		case 's':
 			conf_set_message_callback(NULL);
 			break;
+		case fatalrecursive:
+			recursive_is_error = 1;
+			continue;
 		case 'r':
 			input_file = optarg;
 			break;

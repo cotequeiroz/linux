@@ -37,6 +37,7 @@ static struct symbol symbol_empty = {
 
 struct symbol *modules_sym;
 static tristate modules_val;
+int recursive_is_error;
 
 enum symbol_type sym_get_type(struct symbol *sym)
 {
@@ -1252,6 +1253,9 @@ struct symbol *sym_check_deps(struct symbol *sym)
 		sym2 = sym_check_sym_deps(sym);
 		sym->flags &= ~SYMBOL_CHECK;
 	}
+
+	if (!recursive_is_error && sym2 && sym2 == sym)
+		sym2 = NULL;
 
 	return sym2;
 }
