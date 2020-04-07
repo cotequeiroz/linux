@@ -8,7 +8,6 @@ clean:
 	rm -f $(clean-files) $(hostprogs)
 
 clean-files	:= *.o lxdialog/*.o *.moc qconf-moc.cc \
-		   lexer.lex.c parser.tab.c parser.tab.h \
 		   *conf-cfg # <- This should be removed after 23.05 is EOL
 
 # ===========================================================================
@@ -93,11 +92,18 @@ clean-files += *conf-cflags *conf-libs *conf-bin
 
 FORCE:
 
+ifdef BUILD_SHIPPED_FILES
+shipped-files := lexer.lex.c parser.tab.c parser.tab.h
+clean-files += $(shipped-files)
+
+.SECONDARY: $(shipped-files)
+
 %.tab.c %.tab.h: %.y
 	bison -l -d -b $* $<
 
 %.lex.c: %.l
 	flex -L -o$@ $<
+endif
 
 define link_rule
 $(1): LDLIBS+=$$(HOSTLDLIBS_$(1))
