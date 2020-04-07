@@ -7,7 +7,7 @@ all: conf mconf
 clean:
 	rm -f *.o lxdialog/*.o *.moc .*.cmd $(clean-files)
 
-clean-files	:= lexer.lex.c parser.tab.c parser.tab.h
+clean-files	:=
 
 # ===========================================================================
 # Variables needed by the upstream Makefile
@@ -114,11 +114,18 @@ clean-files += $(targets) $(hostprogs)
 
 FORCE:
 
+ifdef BUILD_SHIPPED_FILES
+shipped-files := lexer.lex.c parser.tab.c parser.tab.h
+clean-files += $(shipped-files)
+
+.SECONDARY: $(shipped-files)
+
 %.tab.c %.tab.h: %.y
 	bison -l -d -b $* $<
 
 %.lex.c: %.l
 	flex -L -o$@ $<
+endif
 
 $(foreach f,$(conf-objs) $(filter-out $(common-objs),$(mconf-objs) \
 						     $(qconf-objs) \
