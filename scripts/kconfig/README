@@ -20,6 +20,9 @@ OpenWrt Buildroot:
    as a warning, avoiding a complete build failure because of unrelated or
    minor recursive deps, or making a scrict check before commiting a change
    that may cause one.
+ - use pre-built *.lex.c *.tab.[ch] files by default, to avoid depending on
+   flex & bison.  Rebuild/remove these files only if running make with
+   BUILD_SHIPPED_FILES defined
 
 For a full list of changes, see the repository at:
 https://github.com/cotequeiroz/linux/commits/openwrt/scripts/kconfig
