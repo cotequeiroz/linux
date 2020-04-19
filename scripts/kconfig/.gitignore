@@ -9,3 +9,8 @@
 
 # OpenWrt-generated files
 mconf_check
+
+# Temporary files from older versions.  They should be removed after the
+# end of support for OpenWrt 19.07.
+zconf.???.c
+zconf.hash.c
